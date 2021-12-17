@@ -4,210 +4,250 @@ import streamlit as st
 import json
 
 # Membaca isi file
-data = pd.read_csv("produksi_minyak_mentah.csv")
-with open('kode_negara_lengkap.json') as countrydata:
-    ctry = json.load(countrydata)
-    countrydata.close()
+def load_data_excel():
+    data=pd.read_csv("produksi_minyak_mentah.csv")
+    data=data[data["produksi"]>=0]
+    data=data[data["tahun"]>0]
+    return data
+
+def run_status():
+    latest_iteration = st.empty()
+    bar = st.progress(0)
+    for i in range (100):
+        latest_iteration.text(f"Percent Complate {i+1}")
+        bar.progress (i+1)
+        time.sleep(0.1)
+        st.empty()
+# Fungsi untuk mencari negara
+def kode_negara(kode, jsn) :
+
+    for i in jsn :
+
+        if kode == i[1] :
+            kname = str(i[0])
+            kode_neg = ("Kode Negara : " + i[2])
+            reg = ("Region : " + i[3])
+            sub_reg = ("Subregion : " + i[4])
+            break
+
+        else :
+            kname = ""
+            kode_neg = ""
+            reg = ""
+            sub_reg = ""
+
+    return kname, kode_neg, reg, sub_reg
+
+#Membaca file excel dan json
+data=load_data_excel()
+with open('kode_negara_lengkap.json') as f:
+    jh = json.load(f)
+    #membuat dict
     dict = []
-    for i in ctry:
-        name = i.get('name')
-        alpha3 = i.get('alpha-3')
-        code = i.get('country-code')
+    for i in jh:
+        nama = i.get('name')
+        code = i.get('alpha-3')
+        country_code = i.get('country-code')
         region = i.get('region')
         subregion = i.get('sub-region')
-        dict.append([name, alpha3, code, region, subregion])
+        dict.append([nama, code, country_code, region, subregion])
 
-
-# Membuat konfigurasi website
-st.set_page_config(page_title="Data Global Produksi Minyak Mentah", page_icon="floppy_disk",layout="wide")
+#Konfigurasi
+st.set_page_config(page_title="uas_12220040",
+                    page_icon=":bar_chart:",
+                    layout="wide")
+st.markdown(
+        "###### Made in [![this is an image link](https://i.imgur.com/iIOA6kU.png)](https://www.streamlit.io/)&nbsp, with :smile: by [@Dharmatsaniya](https://www.instagram.com/dharmatsaniya/) &nbsp | &nbsp [![Follow](https://img.shields.io/twitter/follow/dharmatsaniya?style=social)](https://twitter.com/dharmatsaniya) &nbsp "
+    )
 
 # Membuat main page
-st.markdown("<h1 style='text-align: center; color: black;'>Data Global Produksi Minyak Mentah</h1>", unsafe_allow_html=True)
+st.title(":droplet: Produksi Minyak Mentah di Dunia")
+st.markdown("##")
 
-# Membagi halaman menjadi 2 kolom
-colinfo, colgraph = st.columns(2)
 
-# Fungsi mencari kode negara
-def kode(j, dictionary) :
-    for i in dictionary :
-        if j == i[1] :
-            jname = str(i[0])
-            jcode = ("Kode Negara : " + i[2])
-            jreg = ("Region : " + i[3])
-            jsubreg = ("Subregion : " + i[4])
-            break
-        else :
-            jname = ""
-            jcode = ""
-            jreg = ""
-            jsubreg = ""
+option_menu=st.sidebar.selectbox(
+    'Menu',('Home','Soal A','Soal B','Soal C','Soal D','About Me')
+)
+
+if option_menu == 'Home'or option_menu ==' ':
+    colomhome,colom1=st.columns(2)
+    st.sidebar.image("home.jpg", use_column_width=True)
+    with colomhome:
+        st.subheader('HOME')
+        st.image("peta.jpg", width=500,caption='Peta Dunia <www.bola.com>')
+    with colom1:
+        st.write("Data Produksi Minyak Mentah Dunia")
+        data=load_data_excel()
+        data
+        st.subheader("Scatter Sebaran Produksi Per tahun")
+    fig = px.scatter(data, x="tahun", y="produksi",
+                size="produksi",color="kode_negara",hover_name="tahun",
+                log_x=True, size_max=55, range_x=[1971,2015],range_y=[1971,4000000],
+                animation_frame="tahun",animation_group="kode_negara")
+    fig.update_layout(width=800)
+    st.write(fig)
     
-    return jname, jcode, jreg, jsubreg
 
-# Kolom informasi (Soal D)
-with colinfo :
-    st.header(":page_facing_up: Informasi")
+#SOAL BAGIAN A
 
-    # Soal keseluruhan tahun
-    st.subheader("Keseluruhan Tahun")
-    ## Terbesar
-    st.info('Jumlah Produksi Terbesar Keseluruhan Tahun')
-    df1 = data.sort_values(by='produksi')
-    maxall = df1.nlargest(1, 'produksi')
-    jmax = maxall.iloc[0, 0]
-    jprod = str(maxall.iloc[0,2])
-    maxname,maxcode,maxreg,maxsubreg = kode(jmax, dict)
-    st.write("###### Jumlah Produksi : " + jprod)
-    st.write(maxname)
-    st.write(maxcode)
-    st.write(maxreg)
-    st.write(maxsubreg)
-    ## Terkecil
-    st.warning('Jumlah Produksi Terkecil Keseluruhan Tahun')
-    dffilt = df1[df1['produksi'] != 0]
-    minall = dffilt.nsmallest(1, 'produksi')
-    jmin = minall.iloc[0, 0]
-    jprod = str(minall.iloc[0,2])
-    minname,mincode,minreg,minsubreg = kode(jmin, dict)
-    st.write("###### Jumlah Produksi : " + jprod)
-    st.write(minname)
-    st.write(mincode)
-    st.write(minreg)
-    st.write(minsubreg)
-    ## = 0
-    st.success('Jumlah Produksi = 0 Keseluruhan Tahun')
-    zerofilt = df1[df1['produksi'] == 0]
-    zerocode = zerofilt['kode_negara'].tolist()
-    listzero = []
-    for j in zerocode :
-        for i in dict :
-            if i[1] == j:
-                listzero.append([i[0], i[2], i[3], i[4]])
-                break
-    dfzero = pd.DataFrame(listzero, columns=['Nama', 'Kode Negara', 'Region', 'Subregion'])
-    dfzero = dfzero.drop_duplicates(subset=['Nama'])
-    blankIndex=[''] * len(dfzero)
-    dfzero.index=blankIndex
-    with st.expander("Lihat Tabel"):
-        st.dataframe(dfzero)
+elif option_menu == 'Soal A':
 
-    st.write("")
+    st.subheader("Grafik Jumlah Produksi Minyak Mentah Terhadap Waktu (tahun) dari Suatu Negara N")
+    opsi_negara = st.selectbox("Pilih Negara : ", options=(i[0] for i in dict))
     
-    # Soal per tahun
-    st.subheader("Per Tahun")
-    T = st.number_input("Tahun :", int(data.min(axis=0)['tahun']), int(data.max(axis=0)['tahun']))
-    yeardata = data.query('tahun == @T')
-
-    ## Terbesar
-    st.info("Jumlah Produksi Terbesar pada Tahun {namatahun}".format(namatahun = T))
-    with st.expander("Lihat Informasi"):
-        maxyeardata = yeardata.nlargest(1, 'produksi')
-        jmax = maxyeardata.iloc[0, 0]
-        jprod = str(maxyeardata.iloc[0,2])
-        maxname,maxcode,maxreg,maxsubreg = kode(jmax, dict)
-        st.write("###### Jumlah Produksi : " + jprod)
-        st.write(maxname)
-        st.write(maxcode)
-        st.write(maxreg)
-        st.write(maxsubreg)
-
-    ## Terkecil
-    st.warning("Jumlah Produksi Terkecil pada Tahun {namatahun}".format(namatahun = T))
-    with st.expander("Lihat Informasi"):
-        yeardatafilt = yeardata[yeardata['produksi'] != 0]
-        minyeardata = yeardatafilt.nsmallest(1, 'produksi')
-        jmin = minyeardata.iloc[0, 0]
-        jprod = str(minyeardata.iloc[0,2])
-        minname,mincode,minreg,minsubreg = kode(jmin, dict)
-        st.write("###### Jumlah Produksi : " + jprod)
-        st.write(minname)
-        st.write(mincode)
-        st.write(minreg)
-        st.write(minsubreg)
-
-    ## = 0
-    st.success("Jumlah Produksi = 0 pada Tahun {namatahun}".format(namatahun = T))
-    with st.expander("Lihat Tabel"):
-        zerofilter = yeardata[yeardata['produksi'] == 0]
-        zerocodeb = zerofilter['kode_negara'].tolist()
-        listzeroyeardata = []
-        for j in zerocodeb :
-            for i in dict :
-                if i[1] == j:
-                    listzeroyeardata.append([i[0], i[2], i[3], i[4]])
-                    break
-        dfzeroyd = pd.DataFrame(listzeroyeardata, columns=['Nama', 'Kode Negara', 'Region', 'Subregion'])
-        dfzeroyd = dfzeroyd.drop_duplicates(subset=['Nama'])
-        blankIndex=[''] * len(dfzeroyd)
-        dfzeroyd.index=blankIndex
-        st.dataframe(dfzeroyd)
-
-# Kolom grafik (Soal A, B, C)
-with colgraph :
-    st.header(":bar_chart: Grafik")
-
-    # Opsi grafik
-    opt = ["Bar", "Line", "Scatter"]
-
-    # Soal A
-    st.markdown("#### Grafik Produksi Minyak Mentah Suatu Negara")
-    country = st.selectbox("Negara : ", options=(i[0] for i in dict), key="soala")
-    charttype = st.selectbox("Tipe Grafik : ", options=opt, key="soalaa")
     for i in dict:
-            if i[0] == country :
-                code = i[1]
-    if not((data['kode_negara'] == code).any()) :
-        st.error("Tidak ada data produksi minyak mentah " + country)
-    else :
-        with st.expander("Lihat Grafik"):
-            soala_selection = data.loc[data["kode_negara"] == code]
-            if charttype == "Bar":
-                barchart = px.bar(soala_selection, x = "tahun", y = "produksi", labels={'tahun' : 'Tahun', 'produksi' : 'Jumlah Produksi', 'kode_negara' : 'Kode Negara'}, hover_data=['kode_negara'], title='Grafik Produksi Minyak Mentah {negara}'.format(negara=country), template="seaborn")
-                st.plotly_chart(barchart, use_container_width=True)
-            elif charttype == "Scatter" :
-                scatterchart = px.scatter(soala_selection, x = "tahun", y = "produksi", labels={'tahun' : 'Tahun', 'produksi' : 'Jumlah Produksi', 'kode_negara' : 'Kode Negara'}, hover_data=['kode_negara'], title='Grafik Produksi Minyak Mentah {negara}'.format(negara=country), template="seaborn")
-                st.plotly_chart(scatterchart, use_container_width=True)
-            else :
-                linechart = px.line(soala_selection, x = "tahun", y = "produksi", labels={'tahun' : 'Tahun', 'produksi' : 'Jumlah Produksi', 'kode_negara' : 'Kode Negara'}, hover_data=['kode_negara'], title='Grafik Produksi Minyak Mentah {negara}'.format(negara=country), template="seaborn")
-                st.plotly_chart(linechart, use_container_width=True)
-
-    # Soal B
-    st.markdown("#### Grafik B-Buah Negara dengan Jumlah Produksi Terbesar per Tahun")
-    year = st.number_input("Tahun : ", int(data.min(axis=0)['tahun']), int(data.max(axis=0)['tahun']), key="soalb")
-    ydata = data.query('tahun == @year')
-    b = (st.slider('Jumlah Negara Terbesar : ', 1, ydata['kode_negara'].nunique(), key="soalbb"))
-    cydata = ydata.nlargest(int(b), 'produksi')
-    charttypeb = st.selectbox("Tipe Grafik : ", options=opt, key="soalbbb")
-    judul = "Grafik {jumlah} Buah Negara dengan Jumlah Produksi Terbesar pada Tahun {tahunnya}".format(jumlah = b, tahunnya = year)
-    with st.expander("Lihat Grafik"):
-        if charttypeb == "Bar":
-            barchartb = px.bar(cydata, x = "kode_negara", y = "produksi", labels={'tahun' : 'Tahun', 'produksi' : 'Jumlah Produksi', 'kode_negara' : 'Kode Negara'}, hover_data=['kode_negara'], title=judul, template="seaborn")
-            st.plotly_chart(barchartb, use_container_width=True)
-        elif charttypeb == "Scatter" :
-            scatterchartb = px.scatter(cydata, x = "kode_negara", y = "produksi", labels={'tahun' : 'Tahun', 'produksi' : 'Jumlah Produksi', 'kode_negara' : 'Kode Negara'}, hover_data=['kode_negara'], title=judul, template="seaborn")
-            st.plotly_chart(scatterchartb, use_container_width=True)
-        else :
-            linechartb = px.line(cydata, x = "kode_negara", y = "produksi", labels={'tahun' : 'Tahun', 'produksi' : 'Jumlah Produksi', 'kode_negara' : 'Kode Negara'}, hover_data=['kode_negara'], title=judul, template="seaborn")
-            st.plotly_chart(linechartb, use_container_width=True)
-
-    # Soal C
-    # Membuat Tabel Akumulatif
-    temp = data['kode_negara'].ne(data['kode_negara'].shift()).cumsum()
-    data['kumulatif'] = data.groupby(temp)['produksi'].cumsum()
-    cumdata = data[['kode_negara', 'produksi', 'kumulatif']]
-    cumdata = cumdata.sort_values('kumulatif', ascending=False).drop_duplicates(subset=['kode_negara'])
+        if i[0] == opsi_negara :
+            country_code = i[1]
     
-    st.markdown("#### Grafik B-Buah Negara dengan Jumlah Produksi Kumulatif Terbesar")
-    c = int(st.slider('Jumlah Negara Terbesar : ', 1, cumdata['kode_negara'].nunique(), key="soalc"))
-    cdata = cumdata.nlargest(c, 'kumulatif')
-    charttypec = st.selectbox("Tipe Grafik : ", options=opt, key="soalcc")
-    with st.expander("Lihat Grafik"):
-        if charttypec == "Bar":
-            barchartc = px.bar(cdata, x = "kode_negara", y = "kumulatif", labels={'kumulatif' : 'Jumlah Kumulatif', 'produksi' : 'Jumlah Produksi', 'kode_negara' : 'Kode Negara'}, title="Grafik {jumlahngr} Buah Negara dengan Jumlah Kumulatif Produksi Terbesar".format(jumlahngr = c), template="seaborn")
-            st.plotly_chart(barchartc, use_container_width=True)
-        elif charttypec == "Scatter" :
-            scatterchartc = px.scatter(cdata, x = "kode_negara", y = "kumulatif", labels={'kumulatif' : 'Jumlah Kumulatif', 'produksi' : 'Jumlah Produksi', 'kode_negara' : 'Kode Negara'}, title="Grafik {jumlahngr} Buah Negara dengan Jumlah Kumulatif Produksi Terbesar".format(jumlahngr = c), template="seaborn")
-            st.plotly_chart(scatterchartc, use_container_width=True)
-        else :
-            linechartc = px.line(cdata, x = "kode_negara", y = "kumulatif", labels={'kumulatif' : 'Jumlah Kumulatif', 'produksi' : 'Jumlah Produksi', 'kode_negara' : 'Kode Negara'}, title="Grafik {jumlahngr} Buah Negara dengan Jumlah Kumulatif Produksi Terbesar".format(jumlahngr = c), template="seaborn")
-            st.plotly_chart(linechartc, use_container_width=True)
+    if not((data['kode_negara'] == country_code).any()) :
+        
+        st.error("Tidak Ditemukan Data Produksi Minyak Mentah Negara " + opsi_negara)
+    
+    else :
+
+        with st.expander('Klik untuk melihat Grafik negara '+ opsi_negara ):
+            display_data = data[data["kode_negara"] == country_code][['tahun', 'produksi']]
+            display_data = display_data.rename(columns={'tahun':'Tahun'}).set_index('Tahun')
+            st.line_chart(display_data)
+    
+
+# SOAL BAGIAN B
+elif option_menu == 'Soal B':
+
+    st.subheader('Grafik B-besar Negara dengan Jumlah Produksi Terbesar per Tahun')
+
+    opsi_tahun = st.sidebar.slider('Pilih Tahun : ',1971,max(data["tahun"]),step=1 )
+    data_frame = data.query('tahun == @opsi_tahun')
+
+    besar = (st.sidebar.slider('Pilih Jumlah Negara Terbesar : ', 1, data_frame['kode_negara'].nunique(),step=1 ))
+    besar_data = data_frame.nlargest(int(besar), 'produksi')
+
+    judul_b = "Grafik {jumlah} Besar Negara dengan Jumlah Produksi Terbesar pada Tahun {tahunnya}".format(jumlah = besar, tahunnya = opsi_tahun)
+    with st.expander('Klik untuk melihat Grafik  negara dengan jumlah produksi terbesar pada tahun '+ str(opsi_tahun)):
+        chartb = data.loc[data["tahun"] == int(opsi_tahun)].sort_values(["produksi"], ascending=[0])
+        chartb = chartb[:int(besar)].reset_index(drop=True)
+        chartb_ = chartb[['kode_negara', 'produksi']].rename(columns={'kode_negara':'negara'}).set_index('negara')
+        st.bar_chart(chartb_)
+        st.write(chartb)
+        
+        
+
+# SOAL BAGIAN C
+elif option_menu=='Soal C':
+    st.subheader('Grafik B-Besar Negara dengan Jumlah Produksi Terbesar Secara Kumulatif Seluruh Tahun')
+    st.write('Soal Bagian C')
+    
+    # Membuat Tabel Akumulatif
+    data_kum = data['kode_negara'].ne(data['kode_negara'].shift()).cumsum()
+    data['kumulatif'] = data.groupby(data_kum)['produksi'].cumsum()
+    
+    kumulatif = data[['kode_negara', 'produksi', 'kumulatif']]
+    kumulatif = kumulatif.sort_values('kumulatif', ascending=False).drop_duplicates(subset=['kode_negara'])
+
+    option_jumlah = int(st.slider('Pilih Jumlah Negara Terbesar : ', 1, kumulatif['kode_negara'].nunique()))
+    data_kumulatif = kumulatif.nlargest(option_jumlah, 'kumulatif')
+    with st.expander("Klik untuk melihat grafik produksi terbesar secara kumulatif tahun"):
+        chartc = (data[['kode_negara', 'produksi']].groupby('kode_negara', as_index=False).sum().sort_values(['produksi'], ascending=[0])).reset_index(drop=True)
+        chartc = chartc[:int(option_jumlah)].reset_index(drop=True)
+        chart_ = chartc[['kode_negara', 'produksi']].rename(columns={'kode_negara':'negara'}).set_index('negara')
+        st.bar_chart(chart_)
+        st.write(chart_)
+
+#SOAL BAGIAN D
+elif option_menu=='Soal D':
+    #membaca file dan df
+    df1 = pd.read_json("kode_negara_lengkap.json")
+    df2 = load_data_excel() 
+    df = pd.merge(df2,df1,left_on='kode_negara',right_on='alpha-3')
+
+    #memilih tahun untuk produksi per tahun
+    tahun=st.selectbox("Pilih tahun", range(1971,2016))
+    
+    #list negara
+    lst_negara = df["name"].unique().tolist()
+    lst_negara.sort()
+    
+    #membagi menjadi dua kolom
+    colom1,colom2=st.columns(2)
+
+    kum = df.groupby(['name', 'kode_negara', 'region', 'sub-region'])['produksi'].sum().reset_index().sort_values(by=['produksi'], ascending=False).reset_index(drop=True)
+    kum_max = kum[(kum["produksi"] > 0)].iloc[0]
+    kum_min = kum[(kum["produksi"] > 0)].iloc[-1]
+    kum_nol = kum[(kum["produksi"] == 0)].sort_values(by=['name']).reset_index(drop=True)
+    kum_nol.index += 1
+
+    kum = df[(df["tahun"] == tahun)][['name', 'kode_negara', 'region', 'sub-region', 'produksi']].sort_values(by=['produksi'], ascending=False).reset_index(drop=True)
+    kum_max = kum[(kum["produksi"] > 0)].iloc[0]
+    kum_min = kum[(kum["produksi"] > 0)].iloc[-1]
+    kum_nol = kum[(kum["produksi"] == 0)].sort_values(by=['name']).reset_index(drop=True)
+    kum_nol.index += 1
+
+    with colom1:
+        st.markdown(
+            f'''
+            #### Negara dengan jumlah produksi terbesar pada tahun {tahun}  
+            Negara: {kum_max["name"]}\n
+            Kode negara: {kum_max["kode_negara"]}\n
+            Region: {kum_max["region"]}\n
+            Sub-region: {kum_max["sub-region"]}\n
+            Jumlah produksi: {kum_max["produksi"]}\n
+            
+            #### Negara dengan jumlah produksi terkecil pada tahun {tahun}  
+            Negara: {kum_min["name"]}\n
+            Kode negara: {kum_min["kode_negara"]}\n
+            Region: {kum_min["region"]}\n
+            Sub-region: {kum_min["sub-region"]}\n
+            Jumlah produksi: {kum_min["produksi"]}\n
+            '''
+        )
+    with colom2:     
+        st.markdown(
+            f"""
+            #### Negara dengan total produksi keseluruhan tahun terbesar
+            Negara: {kum_max["name"]}\n
+            Kode negara: {kum_max["kode_negara"]}\n
+            Region: {kum_max["region"]}\n
+            Sub-region: {kum_max["sub-region"]}\n
+            Jumlah produksi: {kum_max["produksi"]}\n
+
+            #### Negara dengan total produksi keseluruhan tahun terkecil
+            Negara: {kum_min["name"]}\n
+            Kode negara: {kum_min["kode_negara"]}\n
+            Region: {kum_min["region"]}\n
+            Sub-region: {kum_min["sub-region"]}\n
+            Jumlah produksi: {kum_min["produksi"]}\n
+
+        
+        """)
+    st.markdown(
+        """
+        #### Negara dengan total produksi keseluruhan tahun sama dengan nol
+        
+    """
+    )
+    kum_nol = kum_nol.drop(['produksi'], axis=1).rename(columns={"name":"Negara", "kode_negara":"Kode Negara", "region":"Region", "sub-region":"Sub Region"})
+    st.dataframe(kum_nol)
+    st.markdown(
+        f"""
+        #### Negara dengan jumlah produksi sama dengan nol pada tahun {tahun}
+        
+    """
+    )
+    kum_nol = kum_nol.drop(['produksi'], axis=1).rename(columns={"name":"Negara", "kode_negara":"Kode Negara", "region":"Region", "sub-region":"Sub Region"})
+    st.dataframe(kum_nol)
+
+st.sidebar.image("images.jpg", use_column_width=True)
+
+#about me
+if option_menu == 'About Me':
+    st.subheader('Hello')
+    colom0,colom=st.columns(2)
+    with colom0:
+        st.image("foto.jpg",width=200)
+    with colom:
+        st.subheader("Informasi Pembuat")
+        st.write("Nama : Mochamad Dharma Tsaniya Rachmat")
+        st.write("NIM  : 12220040")
+        st.write("Kelas: Kelas-02")
+        st.write("Fakultas: Teknik Perminyakan")
+
