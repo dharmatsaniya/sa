@@ -1,6 +1,6 @@
-from logging import PlaceHolder
-import pandas as pd
 import streamlit as st
+import plotly.express as px
+import pandas as pd
 import json
 
 # Membaca isi file
@@ -60,15 +60,15 @@ st.markdown(
         "###### Made in [![this is an image link](https://i.imgur.com/iIOA6kU.png)](https://www.streamlit.io/)&nbsp, with :smile: by [@Dharmatsaniya](https://www.instagram.com/dharmatsaniya/) &nbsp | &nbsp [![Follow](https://img.shields.io/twitter/follow/dharmatsaniya?style=social)](https://twitter.com/dharmatsaniya) &nbsp "
     )
 
-# Membuat main page
+# Membuat simbol icon
 st.title(":droplet: Produksi Minyak Mentah di Dunia")
 st.markdown("##")
 
-
+#Menu
 option_menu=st.sidebar.selectbox(
     'Menu',('Home','Soal A','Soal B','Soal C','Soal D','About Me')
 )
-
+#condition home
 if option_menu == 'Home'or option_menu ==' ':
     colomhome,colom1=st.columns(2)
     st.sidebar.image("home.jpg", use_column_width=True)
@@ -89,16 +89,16 @@ if option_menu == 'Home'or option_menu ==' ':
     
 
 #SOAL BAGIAN A
-
+#condition A
 elif option_menu == 'Soal A':
-
+    #input user
     st.subheader("Grafik Jumlah Produksi Minyak Mentah Terhadap Waktu (tahun) dari Suatu Negara N")
     opsi_negara = st.selectbox("Pilih Negara : ", options=(i[0] for i in dict))
     
     for i in dict:
         if i[0] == opsi_negara :
             country_code = i[1]
-    
+    #condtional
     if not((data['kode_negara'] == country_code).any()) :
         
         st.error("Tidak Ditemukan Data Produksi Minyak Mentah Negara " + opsi_negara)
@@ -112,6 +112,7 @@ elif option_menu == 'Soal A':
     
 
 # SOAL BAGIAN B
+#condtional B
 elif option_menu == 'Soal B':
 
     st.subheader('Grafik B-besar Negara dengan Jumlah Produksi Terbesar per Tahun')
@@ -133,11 +134,13 @@ elif option_menu == 'Soal B':
         
 
 # SOAL BAGIAN C
+#condtional C
 elif option_menu=='Soal C':
+    #tulisan tampilan
     st.subheader('Grafik B-Besar Negara dengan Jumlah Produksi Terbesar Secara Kumulatif Seluruh Tahun')
     st.write('Soal Bagian C')
     
-    # Membuat Tabel Akumulatif
+    #Tabel Akumulatif
     data_kum = data['kode_negara'].ne(data['kode_negara'].shift()).cumsum()
     data['kumulatif'] = data.groupby(data_kum)['produksi'].cumsum()
     
@@ -146,6 +149,7 @@ elif option_menu=='Soal C':
 
     option_jumlah = int(st.slider('Pilih Jumlah Negara Terbesar : ', 1, kumulatif['kode_negara'].nunique()))
     data_kumulatif = kumulatif.nlargest(option_jumlah, 'kumulatif')
+    #membuat grafik
     with st.expander("Klik untuk melihat grafik produksi terbesar secara kumulatif tahun"):
         chartc = (data[['kode_negara', 'produksi']].groupby('kode_negara', as_index=False).sum().sort_values(['produksi'], ascending=[0])).reset_index(drop=True)
         chartc = chartc[:int(option_jumlah)].reset_index(drop=True)
